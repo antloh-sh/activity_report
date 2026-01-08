@@ -1,1 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AAC Activity Reports</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #3ecf8e; --bg: #f0f2f5; --text: #1c1c1c; --grey: #94a3b8; --danger: #ef4444; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; color: var(--text); }
+        .container { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { text-align: center; margin-top: 0; }
+        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .secondary-btn { background: #f1f5f9; color: #475569; font-size: 0.95rem; padding: 12px; }
+        .report-card { background: #f8fafc; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 20px; }
+        .result-box { margin-top: 20px; padding: 15px; background: #eef2ff; border-radius: 8px; text-align: center; font-size: 1.5rem; font-weight: bold; color: #4338ca; }
+        .hidden { display: none; }
+        .logout-btn { background: var(--danger) !important; margin-top: 30px; }
+        .message { padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; }
+        .error { background: #fee2e2; color: #ef4444; }
+        .success { background: #dcfce7; color: #16a34a; }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <h2 id="title">Activity Reports</h2>
+
+    <div id="login-section">
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="signIn()">Sign In</button>
+        <button class="secondary-btn" onclick="showView('reset-section')">Forgot Password?</button>
+    </div>
+
+    <div id="reset-section" class="hidden">
+        <p style="text-align: center;">Enter email for reset link.</p>
+        <input type="email" id="reset-email" placeholder="Email Address">
+        <button onclick="sendResetEmail()">Send Reset Link</button>
+        <button class="secondary-btn" onclick="showView('login-section')">Back to Login</button>
+    </div>
+
+    <div id="main-app" class="hidden">
+        <h3>Generate Report</h3>
+        
+        <label>Select Report Type:</label>
+        <select id="report-select">
+            <option value="get_gui_session_count">Unique GUI Sessions Count</option>
+            </select>
+
+        <label>Start Date:</label>
+        <input type="date" id="start-date">
+
+        <label>End Date:</label>
+        <input type="date" id="end-date">
+
+        <button id="run-btn" onclick="runReport()">Run Report</button>
+
+        <div id="report-result" class="report-card hidden">
+            <div id="result-label">Result:</div>
+            <div id="result-value" class="result-box"></div>
+        </div>
+
+        <button onclick="signOut()" class="logout-btn">Sign Out</button>
+    </div>
+
+    <div id="msg" class="message hidden"></div>
+</div>
+
+<script>
+    // Configuration from your provided Member App
+    const SUPABASE_URL = 'https://qesgfxwgbggjyvngftee.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_MJQrnWCSsg0naLA9hxkPzQ__diYSGYi';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Helpers
+    function showMsg(text, type) {
+        const msgDiv = document.getElementById('msg');
+        msgDiv.innerText = text;
+        msgDiv.className = `message ${type}`;
+        msgDiv.classList.remove('hidden');
+        setTimeout(() => msgDiv.classList.add('hidden'), 5000);
+    }
+
+    function showView(viewId) {
+        const sections = ['login-section', 'reset-section', 'main-app'];
+        sections.forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.getElementById(viewId).classList.remove('hidden');
+    }
+
+    // Auth Functions
+    async function signIn() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) return showMsg(error.message, 'error');
+        window.location.reload();
+    }
+
+    async function sendResetEmail() {
+        const email = document.getElementById('reset-email').value;
+        if (!email) return showMsg("Please enter email", "error");
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+        if (error) return showMsg(error.message, "error");
+        showMsg("Reset link sent!", "success");
+    }
+
+    async function signOut() {
+        await supabaseClient.auth.signOut();
+        window.location.reload();
+    }
+
+    // Report Execution Logic
+    async function runReport() {
+        const reportRPC = document.getElementById('report-select').value;
+        const start = document.getElementById('start-date').value;
+        const end = document.getElementById('end-date').value;
+        const btn = document.getElementById('run-btn');
+
+        if (!start || !end) return showMsg("Please select a date range", "error");
+
+        btn.innerText = "Loading...";
+        btn.disabled = true;
+
+        const { data, error } = await supabaseClient.rpc(reportRPC, {
+            start_date: start,
+            end_date: end
+        });
+
+        btn.innerText = "Run Report";
+        btn.disabled = false;
+
+        if (error) {
+            showMsg(error.message, "error");
+        } else {
+            document.getElementById('report-result').classList.remove('hidden');
+            document.getElementById('result-value').innerText = data;
+        }
+    }
+
+    // Initialize App
+    window.onload = async () => {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user) {
+            showView('main-app');
+        } else {
+            showView('login-section');
+        }
+    };
+</script>
+
+</body>
+</html>
