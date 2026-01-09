@@ -9,17 +9,24 @@
         :root { --primary: #3ecf8e; --bg: #f0f2f5; --text: #1c1c1c; --grey: #94a3b8; --danger: #ef4444; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; color: var(--text); }
         .container { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { text-align: center; margin-top: 0; }
-        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .secondary-btn { background: #f1f5f9; color: #475569; font-size: 0.95rem; padding: 12px; }
-        .report-card { background: #f8fafc; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 20px; }
-        .result-box { margin-top: 20px; padding: 15px; background: #eef2ff; border-radius: 8px; text-align: center; font-size: 1.5rem; font-weight: bold; color: #4338ca; }
+        h2 { text-align: center; margin-top: 0; color: var(--primary); }
+        h3 { margin-bottom: 5px; font-size: 1.1rem; }
+        label { font-size: 0.9rem; color: #64748b; font-weight: 600; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0 18px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        button:disabled { background: var(--grey); cursor: not-allowed; }
+        .secondary-btn { background: #f1f5f9; color: #475569; font-size: 0.9rem; padding: 12px; margin-top: 5px; }
+        .report-card { background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 20px; }
+        .result-box { margin-top: 10px; font-size: 1.1rem; color: var(--text); overflow-x: auto; }
+        .big-number { font-size: 2.5rem; font-weight: bold; color: #4338ca; text-align: center; display: block; padding: 10px; }
         .hidden { display: none; }
-        .logout-btn { background: var(--danger) !important; margin-top: 30px; }
-        .message { padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; }
-        .error { background: #fee2e2; color: #ef4444; }
-        .success { background: #dcfce7; color: #16a34a; }
+        .logout-btn { background: var(--danger) !important; margin-top: 40px; }
+        .message { padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 0.9rem; }
+        .error { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; }
+        .success { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; border-radius: 8px; overflow: hidden; }
+        th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 0.85rem; text-transform: uppercase; color: #64748b; }
+        td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
     </style>
 </head>
 <body>
@@ -35,30 +42,31 @@
     </div>
 
     <div id="reset-section" class="hidden">
-        <p style="text-align: center;">Enter email for reset link.</p>
+        <p style="text-align: center; font-size: 0.9rem;">Enter your email to receive a reset link.</p>
         <input type="email" id="reset-email" placeholder="Email Address">
         <button onclick="sendResetEmail()">Send Reset Link</button>
         <button class="secondary-btn" onclick="showView('login-section')">Back to Login</button>
     </div>
 
     <div id="main-app" class="hidden">
-        <h3>Generate Report</h3>
+        <h3>Report Settings</h3>
         
-        <label>Select Report Type:</label>
+        <label>Query Type</label>
         <select id="report-select">
-            <option value="get_gui_session_count">Unique GUI Sessions Count</option>
-            </select>
+            <option value="get_gui_activity_breakdown">GUI Activity Breakdown (List)</option>
+            <option value="get_gui_session_count">Total GUI Session Count (Number)</option>
+        </select>
 
-        <label>Start Date:</label>
+        <label>Start Date</label>
         <input type="date" id="start-date">
 
-        <label>End Date:</label>
+        <label>End Date</label>
         <input type="date" id="end-date">
 
-        <button id="run-btn" onclick="runReport()">Run Report</button>
+        <button id="run-btn" onclick="runReport()">Execute Query</button>
 
         <div id="report-result" class="report-card hidden">
-            <div id="result-label">Result:</div>
+            <label id="result-label">Report Output:</label>
             <div id="result-value" class="result-box"></div>
         </div>
 
@@ -69,12 +77,10 @@
 </div>
 
 <script>
-    // Configuration from your provided Member App
     const SUPABASE_URL = 'https://qesgfxwgbggjyvngftee.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_MJQrnWCSsg0naLA9hxkPzQ__diYSGYi';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Helpers
     function showMsg(text, type) {
         const msgDiv = document.getElementById('msg');
         msgDiv.innerText = text;
@@ -89,10 +95,11 @@
         document.getElementById(viewId).classList.remove('hidden');
     }
 
-    // Auth Functions
     async function signIn() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        if(!email || !password) return showMsg("Please enter credentials", "error");
+        
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) return showMsg(error.message, 'error');
         window.location.reload();
@@ -103,7 +110,7 @@
         if (!email) return showMsg("Please enter email", "error");
         const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
         if (error) return showMsg(error.message, "error");
-        showMsg("Reset link sent!", "success");
+        showMsg("Reset link sent to your email!", "success");
     }
 
     async function signOut() {
@@ -111,35 +118,62 @@
         window.location.reload();
     }
 
-    // Report Execution Logic
     async function runReport() {
         const reportRPC = document.getElementById('report-select').value;
         const start = document.getElementById('start-date').value;
         const end = document.getElementById('end-date').value;
+        const resultContainer = document.getElementById('report-result');
+        const resultBox = document.getElementById('result-value');
         const btn = document.getElementById('run-btn');
 
-        if (!start || !end) return showMsg("Please select a date range", "error");
+        if (!start || !end) return showMsg("Please select start and end dates", "error");
 
-        btn.innerText = "Loading...";
+        btn.innerText = "Processing...";
         btn.disabled = true;
+        resultContainer.classList.add('hidden');
 
-        const { data, error } = await supabaseClient.rpc(reportRPC, {
-            start_date: start,
-            end_date: end
-        });
+        try {
+            const { data, error } = await supabaseClient.rpc(reportRPC, {
+                start_date: start,
+                end_date: end
+            });
 
-        btn.innerText = "Run Report";
-        btn.disabled = false;
+            if (error) throw error;
 
-        if (error) {
-            showMsg(error.message, "error");
-        } else {
-            document.getElementById('report-result').classList.remove('hidden');
-            document.getElementById('result-value').innerText = data;
+            resultContainer.classList.remove('hidden');
+            
+            // Logic to handle different return types (Array vs Single Number)
+            if (Array.isArray(data)) {
+                if (data.length === 0) {
+                    resultBox.innerHTML = "<p style='text-align:center'>No sessions found for this period.</p>";
+                } else {
+                    let tableHtml = `<table>
+                        <thead>
+                            <tr><th>Activity</th><th>Sessions</th></tr>
+                        </thead>
+                        <tbody>`;
+                    data.forEach(row => {
+                        tableHtml += `<tr>
+                            <td>${row.activity_name}</td>
+                            <td style="font-weight:bold;">${row.session_count}</td>
+                        </tr>`;
+                    });
+                    tableHtml += `</tbody></table>`;
+                    resultBox.innerHTML = tableHtml;
+                }
+            } else {
+                // Handle single number return
+                const displayVal = (data !== null && data !== undefined) ? data : 0;
+                resultBox.innerHTML = `<span class="big-number">${displayVal}</span>`;
+            }
+        } catch (err) {
+            showMsg(err.message, "error");
+        } finally {
+            btn.innerText = "Execute Query";
+            btn.disabled = false;
         }
     }
 
-    // Initialize App
     window.onload = async () => {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (user) {
