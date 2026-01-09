@@ -21,7 +21,7 @@
         .big-number { font-size: 2.5rem; font-weight: bold; color: #4338ca; text-align: center; display: block; padding: 10px; }
         .hidden { display: none; }
         .logout-btn { background: var(--danger) !important; margin-top: 40px; }
-        .message { padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 0.9rem; }
+        .message { padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 0.9rem; z-index: 100; }
         .error { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; }
         .success { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; border-radius: 8px; overflow: hidden; }
@@ -32,7 +32,7 @@
 <body>
 
 <div class="container">
-    <h2 id="title">Activity Reports</h2>
+    <h2 id="title">AAC Activity Reports</h2>
 
     <div id="login-section">
         <input type="email" id="email" placeholder="Email">
@@ -42,7 +42,7 @@
     </div>
 
     <div id="reset-section" class="hidden">
-        <p style="text-align: center; font-size: 0.9rem;">Enter your email to receive a reset link.</p>
+        <p style="text-align: center; font-size: 0.9rem;">Enter email to receive a reset link.</p>
         <input type="email" id="reset-email" placeholder="Email Address">
         <button onclick="sendResetEmail()">Send Reset Link</button>
         <button class="secondary-btn" onclick="showView('login-section')">Back to Login</button>
@@ -54,12 +54,12 @@
         <label>Query Type</label>
         <select id="report-select">
             <option value="get_gui_activity_breakdown">GUI Activity Breakdown (List)</option>
-            <option value="get_gui_session_count">GUI Session Count (Number)</option>
+            <option value="get_gui_session_count">Total GUI Session Count (Number)</option>
             <option value="get_gui_unique_member_count_in_boundary">Unique Members (GUI, In Boundary, Age 60+)</option>
         </select>
 
         <label>Start Date</label>
-        <input type="date" id="start-date">
+        <input type="date" id="start-date" onchange="updateMinDate()">
 
         <label>End Date</label>
         <input type="date" id="end-date">
@@ -96,11 +96,20 @@
         document.getElementById(viewId).classList.remove('hidden');
     }
 
+    // Automatically restrict end-date based on start-date selection
+    function updateMinDate() {
+        const startVal = document.getElementById('start-date').value;
+        const endInput = document.getElementById('end-date');
+        endInput.min = startVal;
+        if (endInput.value && endInput.value < startVal) {
+            endInput.value = '';
+        }
+    }
+
     async function signIn() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         if(!email || !password) return showMsg("Please enter credentials", "error");
-        
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) return showMsg(error.message, 'error');
         window.location.reload();
@@ -111,7 +120,7 @@
         if (!email) return showMsg("Please enter email", "error");
         const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
         if (error) return showMsg(error.message, "error");
-        showMsg("Reset link sent to your email!", "success");
+        showMsg("Reset link sent!", "success");
     }
 
     async function signOut() {
@@ -127,7 +136,12 @@
         const resultBox = document.getElementById('result-value');
         const btn = document.getElementById('run-btn');
 
-        if (!start || !end) return showMsg("Please select start and end dates", "error");
+        // Validation Checks
+        if (!start || !end) return showMsg("Please select both dates", "error");
+        
+        if (new Date(end) < new Date(start)) {
+            return showMsg("End date cannot be earlier than start date", "error");
+        }
 
         btn.innerText = "Processing...";
         btn.disabled = true;
@@ -143,27 +157,18 @@
 
             resultContainer.classList.remove('hidden');
             
-            // Logic to handle different return types (Array vs Single Number)
             if (Array.isArray(data)) {
                 if (data.length === 0) {
-                    resultBox.innerHTML = "<p style='text-align:center'>No sessions found for this period.</p>";
+                    resultBox.innerHTML = "<p style='text-align:center'>No data found for this period.</p>";
                 } else {
-                    let tableHtml = `<table>
-                        <thead>
-                            <tr><th>Activity</th><th>Sessions</th></tr>
-                        </thead>
-                        <tbody>`;
+                    let tableHtml = `<table><thead><tr><th>Activity</th><th>Sessions</th></tr></thead><tbody>`;
                     data.forEach(row => {
-                        tableHtml += `<tr>
-                            <td>${row.activity_name}</td>
-                            <td style="font-weight:bold;">${row.session_count}</td>
-                        </tr>`;
+                        tableHtml += `<tr><td>${row.activity_name}</td><td style="font-weight:bold;">${row.session_count}</td></tr>`;
                     });
                     tableHtml += `</tbody></table>`;
                     resultBox.innerHTML = tableHtml;
                 }
             } else {
-                // Handle single number return
                 const displayVal = (data !== null && data !== undefined) ? data : 0;
                 resultBox.innerHTML = `<span class="big-number">${displayVal}</span>`;
             }
@@ -177,13 +182,9 @@
 
     window.onload = async () => {
         const { data: { user } } = await supabaseClient.auth.getUser();
-        if (user) {
-            showView('main-app');
-        } else {
-            showView('login-section');
-        }
+        if (user) showView('main-app');
+        else showView('login-section');
     };
 </script>
-
 </body>
 </html>
