@@ -58,11 +58,11 @@
             <option value="get_gui_unique_member_count_in_boundary">Unique Members (GUI, In Boundary, Age 60+)</option>
         </select>
 
-        <label>Start Date</label>
-        <input type="date" id="start-date" onchange="updateMinDate()">
+        <label>Start Month</label>
+        <input type="month" id="start-month" onchange="updateMinDate()">
 
-        <label>End Date</label>
-        <input type="date" id="end-date">
+        <label>End Month</label>
+        <input type="month" id="end-month">
 
         <button id="run-btn" onclick="runReport()">Execute Query</button>
 
@@ -96,10 +96,9 @@
         document.getElementById(viewId).classList.remove('hidden');
     }
 
-    // Automatically restrict end-date based on start-date selection
     function updateMinDate() {
-        const startVal = document.getElementById('start-date').value;
-        const endInput = document.getElementById('end-date');
+        const startVal = document.getElementById('start-month').value;
+        const endInput = document.getElementById('end-month');
         endInput.min = startVal;
         if (endInput.value && endInput.value < startVal) {
             endInput.value = '';
@@ -130,18 +129,25 @@
 
     async function runReport() {
         const reportRPC = document.getElementById('report-select').value;
-        const start = document.getElementById('start-date').value;
-        const end = document.getElementById('end-date').value;
+        const startMonth = document.getElementById('start-month').value;
+        const endMonth = document.getElementById('end-month').value;
         const resultContainer = document.getElementById('report-result');
         const resultBox = document.getElementById('result-value');
         const btn = document.getElementById('run-btn');
 
-        // Validation Checks
-        if (!start || !end) return showMsg("Please select both dates", "error");
+        if (!startMonth || !endMonth) return showMsg("Please select both months", "error");
         
-        if (new Date(end) < new Date(start)) {
-            return showMsg("End date cannot be earlier than start date", "error");
+        if (endMonth < startMonth) {
+            return showMsg("End month cannot be earlier than start month", "error");
         }
+
+        // Helper: Convert "YYYY-MM" to first day of month "YYYY-MM-01"
+        const start_date = `${startMonth}-01`;
+        
+        // Helper: Convert "YYYY-MM" to last day of month
+        const endParts = endMonth.split('-');
+        const lastDay = new Date(endParts[0], endParts[1], 0).getDate();
+        const end_date = `${endMonth}-${lastDay}`;
 
         btn.innerText = "Processing...";
         btn.disabled = true;
@@ -149,8 +155,8 @@
 
         try {
             const { data, error } = await supabaseClient.rpc(reportRPC, {
-                start_date: start,
-                end_date: end
+                start_date: start_date,
+                end_date: end_date
             });
 
             if (error) throw error;
