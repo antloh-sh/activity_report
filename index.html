@@ -8,26 +8,29 @@
     <style>
         :root { --primary: #3ecf8e; --bg: #f0f2f5; --text: #1c1c1c; --grey: #94a3b8; --danger: #ef4444; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; color: var(--text); }
-        .container { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .container { width: 100%; max-width: 600px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { text-align: center; margin-top: 0; color: var(--primary); }
         h3 { margin-bottom: 5px; font-size: 1.1rem; }
-        label { font-size: 0.9rem; color: #64748b; font-weight: 600; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0 18px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        label { font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0 18px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; background: #fff; }
+        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; transition: opacity 0.2s; }
+        button:active { opacity: 0.8; }
         button:disabled { background: var(--grey); cursor: not-allowed; }
-        .secondary-btn { background: #f1f5f9; color: #475569; font-size: 0.9rem; padding: 12px; margin-top: 5px; }
+        .secondary-btn { background: #f1f5f9; color: #475569; font-size: 0.9rem; padding: 12px; margin-top: 10px; }
+        .download-btn { background: #4338ca; color: white; margin-top: 15px; }
         .report-card { background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 20px; }
         .result-box { margin-top: 10px; font-size: 1.1rem; color: var(--text); overflow-x: auto; }
         .big-number { font-size: 2.5rem; font-weight: bold; color: #4338ca; text-align: center; display: block; padding: 10px; }
         .hidden { display: none; }
         .logout-btn { background: var(--danger) !important; margin-top: 40px; }
-        .message { padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 0.9rem; z-index: 100; }
+        .message { padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 0.9rem; }
         .error { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; }
         .success { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
-        .data-badge { background: #eff6ff; color: #1d4ed8; padding: 10px; border-radius: 8px; font-size: 0.85rem; text-align: center; margin-bottom: 20px; border: 1px dashed #bfdbfe; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; border-radius: 8px; overflow: hidden; }
-        th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 0.85rem; text-transform: uppercase; color: #64748b; }
-        td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
+        .data-badge { background: #eff6ff; color: #1d4ed8; padding: 12px; border-radius: 8px; font-size: 0.85rem; text-align: center; margin-bottom: 20px; border: 1px dashed #bfdbfe; line-height: 1.4; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; border-radius: 8px; overflow: hidden; font-size: 0.9rem; }
+        th { background: #f1f5f9; padding: 12px 10px; text-align: left; text-transform: uppercase; color: #64748b; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; }
+        tr:last-child td { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -50,16 +53,17 @@
     </div>
 
     <div id="main-app" class="hidden">
-        <div id="data-coverage" class="data-badge">Loading available data range...</div>
+        <div id="data-coverage" class="data-badge">Checking available database range...</div>
         
         <h3>Report Settings</h3>
         
         <label>Query Type</label>
         <select id="report-select">
-            <option value="get_gui_session_count">GUI Session (Cumulative))</option>
+            <option value="get_gui_session_count">GUI Session Count</option>
             <option value="get_gui_activity_breakdown">GUI Activity List</option>
-            <option value="get_gui_unique_member_count_in_boundary">GUI Unique Members (GUI, In Boundary, Age 60+)</option>
-            <option value="get_active_seniors_all_count">Engaged Seniors (In Boundary, Age 60+, 2+ Activities)</option>
+            <option value="get_gui_unique_member_count_in_boundary">GUI Unique Members (In Boundary, Age 60+)</option>
+            <option value="get_active_seniors_all_count">Engaged Seniors (In Boundary, Age 60+, 2+ Sessions)</option>
+            <option value="get_all_cfs_breakdown">Activity Session Count & CFS Averages (All members)</option>
         </select>
 
         <label>Start Month</label>
@@ -73,6 +77,7 @@
         <div id="report-result" class="report-card hidden">
             <label id="result-label">Report Output:</label>
             <div id="result-value" class="result-box"></div>
+            <button id="download-btn" class="download-btn hidden" onclick="downloadCSV()">Download CSV</button>
         </div>
 
         <button onclick="signOut()" class="logout-btn">Sign Out</button>
@@ -85,6 +90,9 @@
     const SUPABASE_URL = 'https://qesgfxwgbggjyvngftee.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_MJQrnWCSsg0naLA9hxkPzQ__diYSGYi';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentReportData = null;
+    let currentReportTitle = "";
 
     function showMsg(text, type) {
         const msgDiv = document.getElementById('msg');
@@ -100,48 +108,35 @@
         document.getElementById(viewId).classList.remove('hidden');
     }
 
+    // Dynamic Range Logic
     async function fetchDataRange() {
         const { data, error } = await supabaseClient.rpc('get_activity_date_range');
         const badge = document.getElementById('data-coverage');
-        if (error) {
-            badge.innerText = "Data range unavailable";
+        if (error || !data.min_date) {
+            badge.innerText = "Data coverage information unavailable.";
             return;
         }
-        
-        if (data.min_date && data.max_date) {
-            const options = { year: 'numeric', month: 'short' };
-            const min = new Date(data.min_date).toLocaleDateString('en-SG', options);
-            const max = new Date(data.max_date).toLocaleDateString('en-SG', options);
-            badge.innerHTML = `<strong>Data Coverage:</strong> ${min} — ${max}`;
-        } else {
-            badge.innerText = "No data uploaded yet";
-        }
+        const options = { year: 'numeric', month: 'short' };
+        const min = new Date(data.min_date).toLocaleDateString('en-SG', options);
+        const max = new Date(data.max_date).toLocaleDateString('en-SG', options);
+        badge.innerHTML = `<strong>Data Coverage:</strong> ${min} — ${max}`;
     }
 
     function updateMinDate() {
         const startVal = document.getElementById('start-month').value;
         const endInput = document.getElementById('end-month');
         endInput.min = startVal;
-        if (endInput.value && endInput.value < startVal) {
-            endInput.value = '';
-        }
+        if (endInput.value && endInput.value < startVal) endInput.value = '';
     }
 
+    // Auth Functions
     async function signIn() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        if(!email || !password) return showMsg("Please enter credentials", "error");
+        if(!email || !password) return showMsg("Enter credentials", "error");
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) return showMsg(error.message, 'error');
         window.location.reload();
-    }
-
-    async function sendResetEmail() {
-        const email = document.getElementById('reset-email').value;
-        if (!email) return showMsg("Please enter email", "error");
-        const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
-        if (error) return showMsg(error.message, "error");
-        showMsg("Reset link sent!", "success");
     }
 
     async function signOut() {
@@ -149,111 +144,54 @@
         window.location.reload();
     }
 
-    async function runReport() {
-        const reportRPC = document.getElementById('report-select').value;
-        const startMonth = document.getElementById('start-month').value;
-        const endMonth = document.getElementById('end-month').value;
-        const resultContainer = document.getElementById('report-result');
-        const resultBox = document.getElementById('result-value');
-        const btn = document.getElementById('run-btn');
-
-        if (!startMonth || !endMonth) return showMsg("Please select both months", "error");
-        if (endMonth < startMonth) return showMsg("End month cannot be earlier than start month", "error");
-
-        const start_date = `${startMonth}-01`;
-        const endParts = endMonth.split('-');
-        const lastDay = new Date(endParts[0], endParts[1], 0).getDate();
-        const end_date = `${endMonth}-${lastDay}`;
-
-        btn.innerText = "Processing...";
-        btn.disabled = true;
-        resultContainer.classList.add('hidden');
-
-        try {
-            const { data, error } = await supabaseClient.rpc(reportRPC, {
-                start_date: start_date,
-                end_date: end_date
-            });
-
-            if (error) throw error;
-
-            resultContainer.classList.remove('hidden');
-            
-            if (Array.isArray(data)) {
-                if (data.length === 0) {
-                    resultBox.innerHTML = "<p style='text-align:center'>No data found for this period.</p>";
-                } else {
-                    let tableHtml = `<table><thead><tr><th>Activity</th><th>Sessions</th></tr></thead><tbody>`;
-                    data.forEach(row => {
-                        tableHtml += `<tr><td>${row.activity_name}</td><td style="font-weight:bold;">${row.session_count}</td></tr>`;
-                    });
-                    tableHtml += `</tbody></table>`;
-                    resultBox.innerHTML = tableHtml;
-                }
-            } else {
-                const displayVal = (data !== null && data !== undefined) ? data : 0;
-                resultBox.innerHTML = `<span class="big-number">${displayVal}</span>`;
-            }
-        } catch (err) {
-            showMsg(err.message, "error");
-        } finally {
-            btn.innerText = "Execute Query";
-            btn.disabled = false;
-        }
+    async function sendResetEmail() {
+        const email = document.getElementById('reset-email').value;
+        if (!email) return showMsg("Enter email", "error");
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+        if (error) return showMsg(error.message, "error");
+        showMsg("Reset link sent!", "success");
     }
 
-    window.onload = async () => {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (user) {
-            showView('main-app');
-            fetchDataRange(); // Auto-load the date range on start
-        } else {
-            showView('login-section');
-        }
-    }
-    
-    // export to csv
-    let currentReportData = null;
-    let currentReportTitle = "";
-    
+    // Report Execution
     async function runReport() {
         const reportSelect = document.getElementById('report-select');
         const reportRPC = reportSelect.value;
         currentReportTitle = reportSelect.options[reportSelect.selectedIndex].text;
         
-        const startMonth = document.getElementById('start-month').value;
-        const endMonth = document.getElementById('end-month').value;
+        const startM = document.getElementById('start-month').value;
+        const endM = document.getElementById('end-month').value;
         const resultContainer = document.getElementById('report-result');
         const resultBox = document.getElementById('result-value');
         const btn = document.getElementById('run-btn');
         const dlBtn = document.getElementById('download-btn');
-    
-        if (!startMonth || !endMonth) return showMsg("Please select both months", "error");
-        
-        const start_date = `${startMonth}-01`;
-        const endParts = endMonth.split('-');
+
+        if (!startM || !endM) return showMsg("Select date range", "error");
+        if (endM < startM) return showMsg("Invalid date range", "error");
+
+        const start_date = `${startM}-01`;
+        const endParts = endM.split('-');
         const lastDay = new Date(endParts[0], endParts[1], 0).getDate();
-        const end_date = `${endMonth}-${lastDay}`;
-    
-        btn.innerText = "Processing...";
+        const end_date = `${endM}-${lastDay}`;
+
+        btn.innerText = "Calculating...";
         btn.disabled = true;
         dlBtn.classList.add('hidden');
-    
+        currentReportData = null;
+
         try {
             const { data, error } = await supabaseClient.rpc(reportRPC, {
                 start_date: start_date,
                 end_date: end_date
             });
-    
+
             if (error) throw error;
             currentReportData = data;
-    
             resultContainer.classList.remove('hidden');
             dlBtn.classList.remove('hidden');
-            
+
             if (Array.isArray(data)) {
                 if (data.length === 0) {
-                    resultBox.innerHTML = "<p>No data found.</p>";
+                    resultBox.innerHTML = "<p style='text-align:center'>No matching records found.</p>";
                     dlBtn.classList.add('hidden');
                 } else {
                     const headers = Object.keys(data[0]);
@@ -262,14 +200,14 @@
                     tableHtml += `</tr></thead><tbody>`;
                     data.forEach(row => {
                         tableHtml += `<tr>`;
-                        headers.forEach(h => tableHtml += `<td>${row[h]}</td>`);
+                        headers.forEach(h => tableHtml += `<td>${row[h] ?? '-'}</td>`);
                         tableHtml += `</tr>`;
                     });
                     tableHtml += `</tbody></table>`;
                     resultBox.innerHTML = tableHtml;
                 }
             } else {
-                resultBox.innerHTML = `<span class="big-number">${data}</span>`;
+                resultBox.innerHTML = `<span class="big-number">${data ?? 0}</span>`;
             }
         } catch (err) {
             showMsg(err.message, "error");
@@ -278,37 +216,43 @@
             btn.disabled = false;
         }
     }
-    
+
+    // CSV Export Logic
     function downloadCSV() {
         if (!currentReportData) return;
-        
         const start = document.getElementById('start-month').value;
         const end = document.getElementById('end-month').value;
         
-        // Prepare rows
-        let rows = [];
-        if (Array.isArray(currentReportData)) {
+        let csvRows = [];
+        if (Array.isArray(currentReportData) && currentReportData.length > 0) {
             const headers = Object.keys(currentReportData[0]);
-            rows.push(headers.join(','));
-            currentReportData.forEach(obj => {
-                rows.push(headers.map(h => `"${obj[h] || 0}"`).join(','));
+            csvRows.push(headers.join(','));
+            currentReportData.forEach(row => {
+                csvRows.push(headers.map(h => `"${row[h] ?? 0}"`).join(','));
             });
         } else {
-            rows.push("Report,Result");
-            rows.push(`"${currentReportTitle}","${currentReportData}"`);
+            csvRows.push("Report,Result");
+            csvRows.push(`"${currentReportTitle}","${currentReportData ?? 0}"`);
         }
-    
-        const csvContent = rows.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
+
+        const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
-        
-        link.setAttribute("href", url);
-        link.setAttribute("download", `${currentReportTitle.replace(/\s+/g, '_')}_${start}_to_${end}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${currentReportTitle.replace(/\s+/g, '_')}_${start}_to_${end}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    window.onload = async () => {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user) {
+            showView('main-app');
+            fetchDataRange();
+        } else {
+            showView('login-section');
+        }
     };
 </script>
 </body>
