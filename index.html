@@ -24,6 +24,7 @@
         .message { padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 0.9rem; z-index: 100; }
         .error { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; }
         .success { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+        .data-badge { background: #eff6ff; color: #1d4ed8; padding: 10px; border-radius: 8px; font-size: 0.85rem; text-align: center; margin-bottom: 20px; border: 1px dashed #bfdbfe; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; border-radius: 8px; overflow: hidden; }
         th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 0.85rem; text-transform: uppercase; color: #64748b; }
         td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
@@ -49,6 +50,8 @@
     </div>
 
     <div id="main-app" class="hidden">
+        <div id="data-coverage" class="data-badge">Loading available data range...</div>
+        
         <h3>Report Settings</h3>
         
         <label>Query Type</label>
@@ -96,6 +99,24 @@
         document.getElementById(viewId).classList.remove('hidden');
     }
 
+    async function fetchDataRange() {
+        const { data, error } = await supabaseClient.rpc('get_activity_date_range');
+        const badge = document.getElementById('data-coverage');
+        if (error) {
+            badge.innerText = "Data range unavailable";
+            return;
+        }
+        
+        if (data.min_date && data.max_date) {
+            const options = { year: 'numeric', month: 'short' };
+            const min = new Date(data.min_date).toLocaleDateString('en-SG', options);
+            const max = new Date(data.max_date).toLocaleDateString('en-SG', options);
+            badge.innerHTML = `<strong>Data Coverage:</strong> ${min} — ${max}`;
+        } else {
+            badge.innerText = "No data uploaded yet";
+        }
+    }
+
     function updateMinDate() {
         const startVal = document.getElementById('start-month').value;
         const endInput = document.getElementById('end-month');
@@ -136,15 +157,9 @@
         const btn = document.getElementById('run-btn');
 
         if (!startMonth || !endMonth) return showMsg("Please select both months", "error");
-        
-        if (endMonth < startMonth) {
-            return showMsg("End month cannot be earlier than start month", "error");
-        }
+        if (endMonth < startMonth) return showMsg("End month cannot be earlier than start month", "error");
 
-        // Helper: Convert "YYYY-MM" to first day of month "YYYY-MM-01"
         const start_date = `${startMonth}-01`;
-        
-        // Helper: Convert "YYYY-MM" to last day of month
         const endParts = endMonth.split('-');
         const lastDay = new Date(endParts[0], endParts[1], 0).getDate();
         const end_date = `${endMonth}-${lastDay}`;
@@ -188,8 +203,12 @@
 
     window.onload = async () => {
         const { data: { user } } = await supabaseClient.auth.getUser();
-        if (user) showView('main-app');
-        else showView('login-section');
+        if (user) {
+            showView('main-app');
+            fetchDataRange(); // Auto-load the date range on start
+        } else {
+            showView('login-section');
+        }
     };
 </script>
 </body>
