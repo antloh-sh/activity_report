@@ -9,25 +9,19 @@
         :root { --primary: #3ecf8e; --bg: #f0f2f5; --text: #1c1c1c; --grey: #94a3b8; --accent: #4338ca; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; color: var(--text); }
         .container { width: 100%; max-width: 650px; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        
-        /* Tabs */
         .tabs { display: flex; gap: 5px; background: #e2e8f0; padding: 5px; border-radius: 10px; margin-bottom: 25px; }
         .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 8px; font-weight: 600; font-size: 0.9rem; color: #64748b; transition: 0.2s; }
-        .tab.active { background: white; color: var(--primary); shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        
+        .tab.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         h2 { text-align: center; margin-top: 0; color: var(--primary); }
         label { font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 5px; }
         input, select { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        
         button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
         .btn-download { background: var(--accent); }
-        
         .data-badge { background: #eff6ff; color: #1d4ed8; padding: 12px; border-radius: 8px; font-size: 0.85rem; text-align: center; margin-bottom: 20px; border: 1px dashed #bfdbfe; }
         .table-container { width: 100%; overflow-x: auto; margin-top: 20px; border: 1px solid #f1f5f9; border-radius: 8px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         th { background: #f8fafc; padding: 12px; text-align: left; color: #64748b; font-size: 0.7rem; border-bottom: 2px solid #e2e8f0; }
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
-        
         .big-number { font-size: 3.5rem; font-weight: 800; text-align: center; color: var(--primary); padding: 30px 0; }
         .hidden { display: none; }
         .card { border: 1px solid #edf2f7; padding: 20px; border-radius: 12px; background: #fff; }
@@ -61,14 +55,11 @@
                 <option value="get_active_seniors_all_count">Active Seniors (2+ Sessions, 60+)</option>
                 <option value="get_all_cfs_breakdown">CFS Averages (All Activities)</option>
             </select>
-
             <div style="display:flex; gap:10px;">
-                <div style="flex:1"><label>Start</label><input type="month" id="rep-start"></div>
-                <div style="flex:1"><label>End</label><input type="month" id="rep-end"></div>
+                <div style="flex:1"><label>Start Month</label><input type="month" id="rep-start"></div>
+                <div style="flex:1"><label>End Month</label><input type="month" id="rep-end"></div>
             </div>
-
             <button id="run-btn" onclick="runReport()">View Statistics</button>
-
             <div id="report-result" class="hidden">
                 <div id="result-value" class="table-container"></div>
             </div>
@@ -76,15 +67,12 @@
 
         <div id="view-download" class="card hidden">
             <div style="text-align: center; margin-bottom: 20px;">
-                <p style="color: #64748b; font-size: 0.9rem;">Download full participant logs for auditing or external reporting.</p>
+                <p style="color: #64748b; font-size: 0.9rem;">Download full logs for the selected range.</p>
             </div>
-
-            <label>Select Month Range</label>
             <div style="display:flex; gap:10px;">
                 <div style="flex:1"><label>From</label><input type="month" id="dl-start"></div>
                 <div style="flex:1"><label>To</label><input type="month" id="dl-end"></div>
             </div>
-
             <button class="btn-download" id="dl-btn" onclick="downloadRawData()">Download Full Logs (CSV)</button>
         </div>
 
@@ -97,7 +85,6 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_MJQrnWCSsg0naLA9hxkPzQ__diYSGYi';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Tab Switching Logic
     function switchTab(type) {
         document.getElementById('view-report').classList.toggle('hidden', type !== 'report');
         document.getElementById('view-download').classList.toggle('hidden', type !== 'download');
@@ -121,17 +108,23 @@
         }
     }
 
+    // NEW ROBUST DATE FORMATTER
+    function getDates(startInput, endInput) {
+        const start_date = `${startInput}-01`;
+        // Set end_date to the 1st day of the NEXT month to ensure the current month is fully included
+        const [year, month] = endInput.split('-').map(Number);
+        const lastDay = new Date(year, month, 0).getDate(); // Get last day of chosen month
+        const end_date = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+        return { start_date, end_date };
+    }
+
     async function runReport() {
         const btn = document.getElementById('run-btn');
-        const startM = document.getElementById('rep-start').value;
-        const endM = document.getElementById('rep-end').value;
-        if (!startM || !endM) return alert("Select dates");
+        const { start_date, end_date } = getDates(document.getElementById('rep-start').value, document.getElementById('rep-end').value);
+        if (!start_date || !end_date) return alert("Select dates");
 
         btn.innerText = "Processing...";
         btn.disabled = true;
-
-        const start_date = `${startM}-01`;
-        const end_date = `${endM}-${new Date(endM.split('-')[0], endM.split('-')[1], 0).getDate()}`;
 
         try {
             const { data, error } = await supabaseClient.rpc(document.getElementById('report-select').value, { start_date, end_date });
@@ -152,20 +145,16 @@
 
     async function downloadRawData() {
         const btn = document.getElementById('dl-btn');
-        const startM = document.getElementById('dl-start').value;
-        const endM = document.getElementById('dl-end').value;
-        if (!startM || !endM) return alert("Select month range");
+        const { start_date, end_date } = getDates(document.getElementById('dl-start').value, document.getElementById('dl-end').value);
+        if (!start_date || !end_date) return alert("Select month range");
 
         btn.innerText = "Generating File...";
         btn.disabled = true;
 
-        const start_date = `${startM}-01`;
-        const end_date = `${endM}-${new Date(endM.split('-')[0], endM.split('-')[1], 0).getDate()}`;
-
         try {
             const { data, error } = await supabaseClient.rpc('get_raw_activity_details', { start_date, end_date });
             if (error) throw error;
-            if (!data.length) return alert("No data for these dates");
+            if (!data || data.length === 0) return alert("No data found for: " + start_date + " to " + end_date);
 
             const headers = Object.keys(data[0]);
             const csv = [headers.join(','), ...data.map(r => headers.map(h => `"${String(r[h]??'').replace(/"/g,'""')}"`).join(','))].join('\n');
@@ -173,7 +162,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `Raw_Logs_${startM}_to_${endM}.csv`;
+            a.download = `Raw_Logs_${start_date}_to_${end_date}.csv`;
             a.click();
         } catch (e) { alert(e.message); }
         finally { btn.innerText = "Download Full Logs (CSV)"; btn.disabled = false; }
