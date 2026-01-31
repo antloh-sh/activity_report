@@ -3,82 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AAC Activity Portal</title>
+    <title>AAC Activity Reports</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #3ecf8e; --bg: #f0f2f5; --text: #1c1c1c; --grey: #94a3b8; --accent: #4338ca; --danger: #ef4444; }
+        :root { --primary: #3ecf8e; --bg: #f0f2f5; --text: #1c1c1c; --grey: #94a3b8; --danger: #ef4444; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; color: var(--text); }
-        .container { width: 100%; max-width: 650px; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .tabs { display: flex; gap: 5px; background: #e2e8f0; padding: 5px; border-radius: 10px; margin-bottom: 25px; }
-        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 8px; font-weight: 600; font-size: 0.9rem; color: #64748b; transition: 0.2s; }
-        .tab.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { width: 100%; max-width: 600px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { text-align: center; margin-top: 0; color: var(--primary); }
-        label { font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        input:invalid { border-color: var(--danger); }
-        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .btn-download { background: var(--accent); }
-        .data-badge { background: #eff6ff; color: #1d4ed8; padding: 12px; border-radius: 8px; font-size: 0.85rem; text-align: center; margin-bottom: 20px; border: 1px dashed #bfdbfe; }
-        .table-container { width: 100%; overflow-x: auto; margin-top: 20px; border: 1px solid #f1f5f9; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th { background: #f8fafc; padding: 12px; text-align: left; color: #64748b; font-size: 0.7rem; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
-        .big-number { font-size: 3.5rem; font-weight: 800; text-align: center; color: var(--primary); padding: 30px 0; }
+        h3 { margin-bottom: 5px; font-size: 1.1rem; }
+        label { font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0 18px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; background: #fff; }
+        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; transition: opacity 0.2s; }
+        button:active { opacity: 0.8; }
+        button:disabled { background: var(--grey); cursor: not-allowed; }
+        .secondary-btn { background: #f1f5f9; color: #475569; font-size: 0.9rem; padding: 12px; margin-top: 10px; }
+        .report-card { background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 20px; }
+        .result-box { margin-top: 10px; font-size: 1.1rem; color: var(--text); overflow-x: auto; }
+        .big-number { font-size: 2.5rem; font-weight: bold; color: #4338ca; text-align: center; display: block; padding: 10px; }
         .hidden { display: none; }
-        .card { border: 1px solid #edf2f7; padding: 20px; border-radius: 12px; background: #fff; }
+        .logout-btn { background: var(--danger) !important; margin-top: 40px; }
+        .message { padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 0.9rem; }
+        .error { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; }
+        .success { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+        .data-badge { background: #eff6ff; color: #1d4ed8; padding: 12px; border-radius: 8px; font-size: 0.85rem; text-align: center; margin-bottom: 20px; border: 1px dashed #bfdbfe; line-height: 1.4; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; border-radius: 8px; overflow: hidden; font-size: 0.9rem; }
+        th { background: #f1f5f9; padding: 12px 10px; text-align: left; text-transform: uppercase; color: #64748b; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; }
+        tr:last-child td { border-bottom: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>AAC Activity Portal</h2>
+    <h2 id="title">AAC Activity Reports</h2>
 
     <div id="login-section">
         <input type="email" id="email" placeholder="Email">
         <input type="password" id="password" placeholder="Password">
         <button onclick="signIn()">Sign In</button>
+        <button class="secondary-btn" onclick="showView('reset-section')">Forgot Password?</button>
+    </div>
+
+    <div id="reset-section" class="hidden">
+        <p style="text-align: center; font-size: 0.9rem;">Enter email to receive a reset link.</p>
+        <input type="email" id="reset-email" placeholder="Email Address">
+        <button onclick="sendResetEmail()">Send Reset Link</button>
+        <button class="secondary-btn" onclick="showView('login-section')">Back to Login</button>
     </div>
 
     <div id="main-app" class="hidden">
-        <div id="data-coverage" class="data-badge">Loading data range...</div>
+        <div id="data-coverage" class="data-badge">Checking available database range...</div>
+        
+        <h3>Report Settings</h3>
+        
+        <label>Query Type</label>
+        <select id="report-select">
+            <option value="get_gui_session_count">GUI Session Count</option>
+            <option value="get_gui_activity_breakdown">GUI Activity List</option>
+            <option value="get_gui_unique_member_count_in_boundary">GUI Unique Members (In Boundary, Age 60+)</option>
+            <option value="get_active_seniors_all_count">Engaged Seniors (In Boundary, Age 60+, 2+ Sessions)</option>
+            <option value="get_all_cfs_breakdown">Activity Session Count & CFS Averages (All members)</option>
+        </select>
 
-        <div class="tabs">
-            <div class="tab active" id="tab-report" onclick="switchTab('report')">Summary Reports</div>
-            <div class="tab" id="tab-download" onclick="switchTab('download')">Raw Data Export</div>
+        <label>Start Month</label>
+        <input type="month" id="start-month" onchange="updateMinDate()">
+
+        <label>End Month</label>
+        <input type="month" id="end-month">
+
+        <button id="run-btn" onclick="runReport()">Execute Query</button>
+
+        <div id="report-result" class="report-card hidden">
+            <label id="result-label">Report Output:</label>
+            <div id="result-value" class="result-box"></div>
         </div>
 
-        <div id="view-report" class="card">
-            <label>Select Report</label>
-            <select id="report-select">
-                <option value="get_gui_activity_breakdown">GUI Activity Breakdown</option>
-                <option value="get_gui_session_count">Total GUI Session Count</option>
-                <option value="get_gui_unique_member_count_in_boundary">Unique Members (GUI, In Boundary, 60+)</option>
-                <option value="get_active_seniors_all_count">Active Seniors (2+ Sessions, 60+)</option>
-                <option value="get_all_cfs_breakdown">CFS Averages (All Activities)</option>
-            </select>
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1"><label>Start</label><input type="month" id="rep-start" onchange="syncMinDate('rep-start', 'rep-end')"></div>
-                <div style="flex:1"><label>End</label><input type="month" id="rep-end"></div>
-            </div>
-            <button id="run-btn" onclick="runReport()">View Statistics</button>
-            <div id="report-result" class="hidden">
-                <div id="result-value" class="table-container"></div>
-            </div>
-        </div>
-
-        <div id="view-download" class="card hidden">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <p style="color: #64748b; font-size: 0.9rem;">Download full logs for the selected range.</p>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1"><label>From</label><input type="month" id="dl-start" onchange="syncMinDate('dl-start', 'dl-end')"></div>
-                <div style="flex:1"><label>To</label><input type="month" id="dl-end"></div>
-            </div>
-            <button class="btn-download" id="dl-btn" onclick="downloadRawData()">Download Full Logs (CSV)</button>
-        </div>
-
-        <button onclick="supabaseClient.auth.signOut().then(()=>location.reload())" style="background:none; color:#94a3b8; font-size:0.8rem; margin-top:30px; border:1px solid #e2e8f0;">Sign Out</button>
+        <button onclick="signOut()" class="logout-btn">Sign Out</button>
     </div>
+
+    <div id="msg" class="message hidden"></div>
 </div>
 
 <script>
@@ -86,115 +89,126 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_MJQrnWCSsg0naLA9hxkPzQ__diYSGYi';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    function switchTab(type) {
-        document.getElementById('view-report').classList.toggle('hidden', type !== 'report');
-        document.getElementById('view-download').classList.toggle('hidden', type !== 'download');
-        document.getElementById('tab-report').classList.toggle('active', type === 'report');
-        document.getElementById('tab-download').classList.toggle('active', type === 'download');
+    function showMsg(text, type) {
+        const msgDiv = document.getElementById('msg');
+        msgDiv.innerText = text;
+        msgDiv.className = `message ${type}`;
+        msgDiv.classList.remove('hidden');
+        setTimeout(() => msgDiv.classList.add('hidden'), 5000);
     }
 
-    // Prevents selecting an end date earlier than start date in the UI
-    function syncMinDate(startId, endId) {
-        const startVal = document.getElementById(startId).value;
-        document.getElementById(endId).min = startVal;
-    }
-
-    async function signIn() {
-        const { error } = await supabaseClient.auth.signInWithPassword({
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value
-        });
-        if (error) alert(error.message); else location.reload();
+    function showView(viewId) {
+        const sections = ['login-section', 'reset-section', 'main-app'];
+        sections.forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.getElementById(viewId).classList.remove('hidden');
     }
 
     async function fetchDataRange() {
-        const { data } = await supabaseClient.rpc('get_activity_date_range');
-        if (data?.min_date) {
-            const opt = { year: 'numeric', month: 'short' };
-            document.getElementById('data-coverage').innerHTML = `<strong>Coverage:</strong> ${new Date(data.min_date).toLocaleDateString('en-SG', opt)} — ${new Date(data.max_date).toLocaleDateString('en-SG', opt)}`;
+        const { data, error } = await supabaseClient.rpc('get_activity_date_range');
+        const badge = document.getElementById('data-coverage');
+        if (error || !data.min_date) {
+            badge.innerText = "Data coverage information unavailable.";
+            return;
         }
+        const options = { year: 'numeric', month: 'short' };
+        const min = new Date(data.min_date).toLocaleDateString('en-SG', options);
+        const max = new Date(data.max_date).toLocaleDateString('en-SG', options);
+        badge.innerHTML = `<strong>Data Coverage:</strong> ${min} — ${max}`;
     }
 
-    function validateAndGetDates(startId, endId) {
-        const s = document.getElementById(startId).value; // e.g., "2025-12"
-        const e = document.getElementById(endId).value;   // e.g., "2026-01"
-        
-        if (!s || !e) { alert("Please select both dates."); return null; }
-        if (e < s) { alert("End date cannot be before start date."); return null; }
-    
-        const start_date = `${s}-01`;
-        
-        // Logic to get the absolute last day of the end month
-        const [year, month] = e.split('-').map(Number);
-        const lastDay = new Date(year, month, 0).getDate(); 
-        const end_date = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
-        
-        console.log("Range being sent to Supabase:", start_date, "to", end_date);
-        return { start_date, end_date };
+    function updateMinDate() {
+        const startVal = document.getElementById('start-month').value;
+        const endInput = document.getElementById('end-month');
+        endInput.min = startVal;
+        if (endInput.value && endInput.value < startVal) endInput.value = '';
+    }
+
+    async function signIn() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        if(!email || !password) return showMsg("Enter credentials", "error");
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) return showMsg(error.message, 'error');
+        window.location.reload();
+    }
+
+    async function signOut() {
+        await supabaseClient.auth.signOut();
+        window.location.reload();
+    }
+
+    async function sendResetEmail() {
+        const email = document.getElementById('reset-email').value;
+        if (!email) return showMsg("Enter email", "error");
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+        if (error) return showMsg(error.message, "error");
+        showMsg("Reset link sent!", "success");
     }
 
     async function runReport() {
-        const dates = validateAndGetDates('rep-start', 'rep-end');
-        if (!dates) return;
-
+        const reportSelect = document.getElementById('report-select');
+        const reportRPC = reportSelect.value;
+        
+        const startM = document.getElementById('start-month').value;
+        const endM = document.getElementById('end-month').value;
+        const resultContainer = document.getElementById('report-result');
+        const resultBox = document.getElementById('result-value');
         const btn = document.getElementById('run-btn');
-        btn.innerText = "Processing...";
+
+        if (!startM || !endM) return showMsg("Select date range", "error");
+        if (endM < startM) return showMsg("Invalid date range", "error");
+
+        const start_date = `${startM}-01`;
+        const endParts = endM.split('-');
+        const lastDay = new Date(endParts[0], endParts[1], 0).getDate();
+        const end_date = `${endM}-${lastDay}`;
+
+        btn.innerText = "Calculating...";
         btn.disabled = true;
 
         try {
-            const { data, error } = await supabaseClient.rpc(document.getElementById('report-select').value, { 
-                start_date: dates.start_date, 
-                end_date: dates.end_date 
+            const { data, error } = await supabaseClient.rpc(reportRPC, {
+                start_date: start_date,
+                end_date: end_date
             });
+
             if (error) throw error;
-            document.getElementById('report-result').classList.remove('hidden');
-            
-            if (Array.isArray(data) && data.length > 0) {
-                const headers = Object.keys(data[0]);
-                let html = `<table><tr>${headers.map(h => `<th>${h.replace(/_/g, ' ')}</th>`).join('')}</tr>`;
-                data.forEach(row => html += `<tr>${headers.map(h => `<td>${row[h] ?? 0}</td>`).join('')}</tr>`);
-                document.getElementById('result-value').innerHTML = html + "</table>";
+            resultContainer.classList.remove('hidden');
+
+            if (Array.isArray(data)) {
+                if (data.length === 0) {
+                    resultBox.innerHTML = "<p style='text-align:center'>No matching records found.</p>";
+                } else {
+                    const headers = Object.keys(data[0]);
+                    let tableHtml = `<table><thead><tr>`;
+                    headers.forEach(h => tableHtml += `<th>${h.replace(/_/g, ' ')}</th>`);
+                    tableHtml += `</tr></thead><tbody>`;
+                    data.forEach(row => {
+                        tableHtml += `<tr>`;
+                        headers.forEach(h => tableHtml += `<td>${row[h] ?? '-'}</td>`);
+                        tableHtml += `</tr>`;
+                    });
+                    tableHtml += `</tbody></table>`;
+                    resultBox.innerHTML = tableHtml;
+                }
             } else {
-                document.getElementById('result-value').innerHTML = `<div class="big-number">${data ?? 0}</div>`;
+                resultBox.innerHTML = `<span class="big-number">${data ?? 0}</span>`;
             }
-        } catch (e) { alert(e.message); }
-        finally { btn.innerText = "View Statistics"; btn.disabled = false; }
-    }
-
-    async function downloadRawData() {
-        const dates = validateAndGetDates('dl-start', 'dl-end');
-        if (!dates) return;
-
-        const btn = document.getElementById('dl-btn');
-        btn.innerText = "Generating File...";
-        btn.disabled = true;
-
-        try {
-            const { data, error } = await supabaseClient.rpc('get_raw_activity_details', { 
-                start_date: dates.start_date, 
-                end_date: dates.end_date 
-            });
-            if (error) throw error;
-            if (!data || data.length === 0) return alert("No data found for this range.");
-
-            const headers = Object.keys(data[0]);
-            const csv = [headers.join(','), ...data.map(r => headers.map(h => `"${String(r[h]??'').replace(/"/g,'""')}"`).join(','))].join('\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `Raw_Logs_${dates.start_date}_to_${dates.end_date}.csv`;
-            a.click();
-        } catch (e) { alert(e.message); }
-        finally { btn.innerText = "Download Full Logs (CSV)"; btn.disabled = false; }
+        } catch (err) {
+            showMsg(err.message, "error");
+        } finally {
+            btn.innerText = "Execute Query";
+            btn.disabled = false;
+        }
     }
 
     window.onload = async () => {
         const { data: { user } } = await supabaseClient.auth.getUser();
-        if (user) { 
-            document.getElementById('main-app').classList.remove('hidden'); 
-            document.getElementById('login-section').classList.add('hidden'); 
-            fetchDataRange(); 
+        if (user) {
+            showView('main-app');
+            fetchDataRange();
+        } else {
+            showView('login-section');
         }
     };
 </script>
