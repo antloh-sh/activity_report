@@ -1,0 +1,24 @@
+{
+  "reports": [
+    {
+      "id": "get_gui_session_count",
+      "name": "GUI Session Count"
+    },
+    {
+      "id": "get_gui_activity_breakdown",
+      "name": "GUI Activity List"
+    },
+    {
+      "id": "get_gui_unique_member_count_in_boundary",
+      "name": "GUI Unique Members (In Boundary, Age 60+)"
+    },
+    {
+      "id": "get_active_seniors_all_count",
+      "name": "Engaged Seniors (In Boundary, Age 60+, 2+ Sessions)"
+    },
+    {
+      "id": "get_all_cfs_breakdown",
+      "name": "Activity Session Count & CFS Averages (All members)"
+    }
+  ]
+}
