@@ -58,11 +58,7 @@
         
         <label>Query Type</label>
         <select id="report-select">
-            <option value="get_gui_session_count">GUI Session Count</option>
-            <option value="get_gui_activity_breakdown">GUI Activity List</option>
-            <option value="get_gui_unique_member_count_in_boundary">GUI Unique Members (In Boundary, Age 60+)</option>
-            <option value="get_active_seniors_all_count">Engaged Seniors (In Boundary, Age 60+, 2+ Sessions)</option>
-            <option value="get_all_cfs_breakdown">Activity Session Count & CFS Averages (All members)</option>
+            <option value="">Loading reports...</option>
         </select>
 
         <label>Start Month</label>
@@ -101,6 +97,26 @@
         const sections = ['login-section', 'reset-section', 'main-app'];
         sections.forEach(id => document.getElementById(id).classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
+    }
+
+    async function loadReports() {
+        const reportSelect = document.getElementById('report-select');
+        try {
+            const response = await fetch('reports.json');
+            if (!response.ok) throw new Error('Could not load report config');
+            const data = await response.json();
+            
+            reportSelect.innerHTML = ''; // Clear loading message
+            data.reports.forEach(report => {
+                const opt = document.createElement('option');
+                opt.value = report.id;
+                opt.textContent = report.name;
+                reportSelect.appendChild(opt);
+            });
+        } catch (err) {
+            console.error(err);
+            reportSelect.innerHTML = '<option value="">Error loading reports</option>';
+        }
     }
 
     async function fetchDataRange() {
@@ -149,6 +165,8 @@
         const reportSelect = document.getElementById('report-select');
         const reportRPC = reportSelect.value;
         
+        if (!reportRPC) return showMsg("Please select a report", "error");
+
         const startM = document.getElementById('start-month').value;
         const endM = document.getElementById('end-month').value;
         const resultContainer = document.getElementById('report-result');
@@ -207,6 +225,7 @@
         if (user) {
             showView('main-app');
             fetchDataRange();
+            loadReports(); // Dynamically load the dropdown options
         } else {
             showView('login-section');
         }
