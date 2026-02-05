@@ -51,6 +51,12 @@
         <button class="secondary-btn" onclick="showView('login-section')">Back to Login</button>
     </div>
 
+    <div id="password-update-section" class="hidden">
+        <p style="text-align: center; font-size: 0.9rem;">Enter your new password below.</p>
+        <input type="password" id="new-password" placeholder="New Password">
+        <button onclick="updatePassword()">Update Password</button>
+    </div>
+
     <div id="main-app" class="hidden">
         <div id="data-coverage" class="data-badge">Checking available database range...</div>
         
@@ -81,10 +87,12 @@
 </div>
 
 <script>
+    // Configuration
     const SUPABASE_URL = 'https://qesgfxwgbggjyvngftee.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_MJQrnWCSsg0naLA9hxkPzQ__diYSGYi';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Navigation and Messaging
     function showMsg(text, type) {
         const msgDiv = document.getElementById('msg');
         msgDiv.innerText = text;
@@ -94,11 +102,59 @@
     }
 
     function showView(viewId) {
-        const sections = ['login-section', 'reset-section', 'main-app'];
+        const sections = ['login-section', 'reset-section', 'main-app', 'password-update-section'];
         sections.forEach(id => document.getElementById(id).classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
     }
 
+    // Authentication Logic
+    async function signIn() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        if(!email || !password) return showMsg("Enter credentials", "error");
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) return showMsg(error.message, 'error');
+        window.location.reload();
+    }
+
+    async function signOut() {
+        await supabaseClient.auth.signOut();
+        window.location.reload();
+    }
+
+    // NEW: Updated to handle redirection back to THIS specific app
+    async function sendResetEmail() {
+        const email = document.getElementById('reset-email').value;
+        if (!email) return showMsg("Enter email", "error");
+
+        // Redirect specifically to this page's URL
+        const redirectUrl = window.location.origin + window.location.pathname;
+
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: redirectUrl
+        });
+
+        if (error) return showMsg(error.message, "error");
+        showMsg("Reset link sent!", "success");
+    }
+
+    // NEW: Function to handle the password change
+    async function updatePassword() {
+        const newPassword = document.getElementById('new-password').value;
+        if (!newPassword) return showMsg("Please enter a new password", "error");
+
+        const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+        
+        if (error) {
+            showMsg(error.message, "error");
+        } else {
+            showMsg("Password updated! Please log in.", "success");
+            await supabaseClient.auth.signOut();
+            showView('login-section');
+        }
+    }
+
+    // App Logic
     async function loadReports() {
         const reportSelect = document.getElementById('report-select');
         try {
@@ -106,7 +162,7 @@
             if (!response.ok) throw new Error('Could not load report config');
             const data = await response.json();
             
-            reportSelect.innerHTML = ''; // Clear loading message
+            reportSelect.innerHTML = ''; 
             data.reports.forEach(report => {
                 const opt = document.createElement('option');
                 opt.value = report.id;
@@ -139,32 +195,9 @@
         if (endInput.value && endInput.value < startVal) endInput.value = '';
     }
 
-    async function signIn() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        if(!email || !password) return showMsg("Enter credentials", "error");
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) return showMsg(error.message, 'error');
-        window.location.reload();
-    }
-
-    async function signOut() {
-        await supabaseClient.auth.signOut();
-        window.location.reload();
-    }
-
-    async function sendResetEmail() {
-        const email = document.getElementById('reset-email').value;
-        if (!email) return showMsg("Enter email", "error");
-        const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
-        if (error) return showMsg(error.message, "error");
-        showMsg("Reset link sent!", "success");
-    }
-
     async function runReport() {
         const reportSelect = document.getElementById('report-select');
         const reportRPC = reportSelect.value;
-        
         if (!reportRPC) return showMsg("Please select a report", "error");
 
         const startM = document.getElementById('start-month').value;
@@ -174,8 +207,7 @@
         const btn = document.getElementById('run-btn');
 
         if (!startM || !endM) return showMsg("Select date range", "error");
-        if (endM < startM) return showMsg("Invalid date range", "error");
-
+        
         const start_date = `${startM}-01`;
         const endParts = endM.split('-');
         const lastDay = new Date(endParts[0], endParts[1], 0).getDate();
@@ -220,14 +252,25 @@
         }
     }
 
+    // Initialization and Recovery Event Listener
     window.onload = async () => {
+        // Handle Supabase Auth Events
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === "PASSWORD_RECOVERY") {
+                showView('password-update-section');
+            }
+        });
+
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (user) {
             showView('main-app');
             fetchDataRange();
-            loadReports(); // Dynamically load the dropdown options
+            loadReports(); 
         } else {
-            showView('login-section');
+            // Only show login if we aren't currently in a password recovery flow
+            if (!window.location.hash.includes('type=recovery')) {
+                showView('login-section');
+            }
         }
     };
 </script>
