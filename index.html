@@ -79,9 +79,16 @@
     // BUSINESS LOGIC: Report Management
     async function loadReports() {
         try {
-            const response = await fetch('reports.json');
+            // Using './' ensures it looks in the same directory as index.html
+            const response = await fetch('./reports.json');
+            
+            if (!response.ok) throw new Error('File not found');
+            
             const data = await response.json();
             const select = document.getElementById('report-select');
+            
+            // Keep the placeholder, clear the rest
+            select.innerHTML = '<option value="" disabled selected>-- Choose a report --</option>';
             
             data.forEach(report => {
                 const opt = document.createElement('option');
@@ -90,8 +97,9 @@
                 select.appendChild(opt);
             });
         } catch (error) {
-            console.error("Error loading reports.json:", error);
-            showMsg("Failed to load reports configuration", "error");
+            console.error("Config Error:", error);
+            // This confirms the app is running but the JSON file is unreachable
+            showMsg("Cannot find reports.json in this folder", "error");
         }
     }
 
