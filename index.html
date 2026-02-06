@@ -78,16 +78,19 @@
 <script>
     // BUSINESS LOGIC: Report Management
     async function loadReports() {
+    // Explicitly point to the activity_report repository
+    const CONFIG_URL = 'https://antloh-sh.github.io/activity_report/reports.json';
         try {
-            // Using './' ensures it looks in the same directory as index.html
-            const response = await fetch('./reports.json');
+            const response = await fetch(CONFIG_URL);
             
-            if (!response.ok) throw new Error('File not found');
+            if (!response.ok) {
+                throw new Error(`Could not find reports.json at ${CONFIG_URL}`);
+            }
             
             const data = await response.json();
             const select = document.getElementById('report-select');
             
-            // Keep the placeholder, clear the rest
+            // Reset dropdown
             select.innerHTML = '<option value="" disabled selected>-- Choose a report --</option>';
             
             data.forEach(report => {
@@ -96,10 +99,10 @@
                 opt.innerText = report.display_name;
                 select.appendChild(opt);
             });
+            console.log("Reports loaded from activity_report repo successfully");
         } catch (error) {
             console.error("Config Error:", error);
-            // This confirms the app is running but the JSON file is unreachable
-            showMsg("Cannot find reports.json in this folder", "error");
+            showMsg("Error: Could not load reports.json from activity_report repo.", "error");
         }
     }
 
