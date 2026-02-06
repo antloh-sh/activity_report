@@ -51,7 +51,7 @@
         <label for="report-select">Select Report Type</label>
         <select id="report-select">
             <option value="" disabled selected>-- Choose a report --</option>
-            </select>
+        </select>
 
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
@@ -78,21 +78,27 @@
 <script>
     // BUSINESS LOGIC: Report Management
     async function loadReports() {
-        const { data, error } = await supabaseClient.from('report_metadata').select('rpc_name, display_name').order('display_name');
-        const select = document.getElementById('report-select');
-        if (error) return console.error("Error loading reports:", error);
-        data.forEach(report => {
-            const opt = document.createElement('option');
-            opt.value = report.rpc_name;
-            opt.innerText = report.display_name;
-            select.appendChild(opt);
-        });
+        try {
+            const response = await fetch('reports.json');
+            const data = await response.json();
+            const select = document.getElementById('report-select');
+            
+            data.forEach(report => {
+                const opt = document.createElement('option');
+                opt.value = report.rpc_name;
+                opt.innerText = report.display_name;
+                select.appendChild(opt);
+            });
+        } catch (error) {
+            console.error("Error loading reports.json:", error);
+            showMsg("Failed to load reports configuration", "error");
+        }
     }
 
     async function fetchDataRange() {
         const { data, error } = await supabaseClient.rpc('get_activity_date_range');
         const badge = document.getElementById('data-coverage');
-        if (error || !data.min_date) {
+        if (error || !data || !data.min_date) {
             badge.innerText = "Data coverage unavailable.";
             return;
         }
@@ -102,7 +108,6 @@
         
         badge.innerHTML = `<strong>Data Coverage:</strong> ${minD.toLocaleDateString('en-SG', options)} — ${maxD.toLocaleDateString('en-SG', options)}`;
         
-        // Set default inputs
         const minISO = data.min_date.substring(0, 7);
         const maxISO = data.max_date.substring(0, 7);
         document.getElementById('start-month').min = minISO;
@@ -162,7 +167,6 @@
         }
     }
 
-    // UI HELPERS
     function showMsg(text, type) {
         const msgDiv = document.getElementById('msg');
         msgDiv.innerText = text;
@@ -185,10 +189,8 @@
         else window.location.reload();
     }
 
-    // INITIALIZATION
     window.onload = async () => {
-        resetIdleTimer(); // Shared function from auth-config.js
-
+        resetIdleTimer();
         const { data: { session } } = await supabaseClient.auth.getSession();
         
         setTimeout(() => {
