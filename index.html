@@ -78,31 +78,35 @@
 <script>
     // BUSINESS LOGIC: Report Management
     async function loadReports() {
-    // Explicitly point to the activity_report repository
-    const CONFIG_URL = 'https://antloh-sh.github.io/activity_report/reports.json';
         try {
-            const response = await fetch(CONFIG_URL);
+            // Use relative path since index.html and reports.json are in the same repo
+            const response = await fetch('reports.json');
             
             if (!response.ok) {
-                throw new Error(`Could not find reports.json at ${CONFIG_URL}`);
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
             const select = document.getElementById('report-select');
             
-            // Reset dropdown
+            // Reset dropdown to default
             select.innerHTML = '<option value="" disabled selected>-- Choose a report --</option>';
             
-            data.forEach(report => {
+            // MATCHING YOUR JSON STRUCTURE: report.id and report.name
+            // Note: We access data.reports because your JSON has a root "reports" object
+            const reportsList = data.reports || data; 
+    
+            reportsList.forEach(report => {
                 const opt = document.createElement('option');
-                opt.value = report.rpc_name;
-                opt.innerText = report.display_name;
+                opt.value = report.id;   // Maps to your "id" field
+                opt.innerText = report.name; // Maps to your "name" field
                 select.appendChild(opt);
             });
-            console.log("Reports loaded from activity_report repo successfully");
+            
+            console.log("Reports loaded successfully from local JSON");
         } catch (error) {
             console.error("Config Error:", error);
-            showMsg("Error: Could not load reports.json from activity_report repo.", "error");
+            showMsg("Failed to load reports from reports.json", "error");
         }
     }
 
