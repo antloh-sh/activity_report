@@ -12,43 +12,62 @@
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; color: var(--text); }
         .container { width: 100%; max-width: 600px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { text-align: center; margin-top: 0; color: var(--primary); }
-        h3 { margin-bottom: 5px; font-size: 1.1rem; }
         label { font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         input, select { width: 100%; padding: 12px; margin: 8px 0 20px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; background: #fff; }
-        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: opacity 0.2s; }
-        button:disabled { background: var(--grey); cursor: not-allowed; }
+        
+        /* Password Wrapper */
+        .password-wrapper { position: relative; }
+        .toggle-password { position: absolute; right: 12px; top: 12px; cursor: pointer; color: var(--grey); font-size: 0.8rem; user-select: none; }
+
+        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        .links-container { text-align: center; margin-top: 15px; }
+        .link-btn { background: none; border: none; color: #64748b; text-decoration: underline; font-size: 0.9rem; cursor: pointer; padding: 5px; }
+        
         .data-badge { display: inline-block; background: #e2e8f0; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; color: #475569; margin-bottom: 20px; }
-        #result-container { margin-top: 30px; border-top: 2px solid #f1f5f9; padding-top: 20px; }
-        .result-box { background: #f8fafc; border-radius: 8px; padding: 15px; overflow-x: auto; border: 1px solid #e2e8f0; }
+        .result-box { background: #f8fafc; border-radius: 8px; padding: 15px; overflow-x: auto; border: 1px solid #e2e8f0; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         th { background: #f1f5f9; text-align: left; padding: 10px; border-bottom: 2px solid #cbd5e1; }
         td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
-        .big-number { display: block; text-align: center; font-size: 3.5rem; font-weight: 800; color: var(--primary); }
         .hidden { display: none; }
         .message { padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: bold; }
         .error { background: #fee2e2; color: #ef4444; }
+        .success { background: #dcfce7; color: #16a34a; }
         .logout-btn { background: none; color: var(--danger); border: 1px solid var(--danger); margin-top: 20px; padding: 10px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Activity Reports</h2>
-    
+    <h2 id="app-title">Activity Reports</h2>
     <div id="msg" class="message hidden"></div>
 
     <div id="login-section">
         <label>Email</label>
         <input type="email" id="email" placeholder="Enter your email">
         <label>Password</label>
-        <input type="password" id="password" placeholder="Enter password">
+        <div class="password-wrapper">
+            <input type="password" id="password" placeholder="Enter password">
+            <span class="toggle-password" onclick="togglePassword()">Show</span>
+        </div>
         <button onclick="signIn()">Sign In</button>
+        <div class="links-container">
+            <button class="link-btn" onclick="forgotPassword()">Forgot Password?</button>
+        </div>
+    </div>
+
+    <div id="reset-section" class="hidden">
+        <p style="font-size: 0.9rem; color: #64748b;">Enter your email to receive a password reset link.</p>
+        <label>Email</label>
+        <input type="email" id="reset-email" placeholder="Enter your email">
+        <button onclick="handleReset()">Send Reset Link</button>
+        <div class="links-container">
+            <button class="link-btn" onclick="showLogin()">Back to Login</button>
+        </div>
     </div>
 
     <div id="main-app" class="hidden">
         <div id="data-coverage" class="data-badge">Checking data coverage...</div>
-
-        <label for="report-select">Select Report Type</label>
+        <label>Select Report Type</label>
         <select id="report-select">
             <option value="" disabled selected>-- Choose a report --</option>
         </select>
@@ -56,7 +75,7 @@
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
                 <label>Start Month</label>
-                <input type="month" id="start-month" onchange="updateMinDate()">
+                <input type="month" id="start-month">
             </div>
             <div style="flex: 1;">
                 <label>End Month</label>
@@ -65,121 +84,81 @@
         </div>
 
         <button id="run-btn" onclick="runReport()">Execute Query</button>
-
         <div id="result-container" class="hidden">
-            <h3>Query Result</h3>
             <div id="result-box" class="result-box"></div>
         </div>
-
         <button onclick="signOut()" class="logout-btn">Sign Out</button>
     </div>
 </div>
 
 <script>
-    // BUSINESS LOGIC: Report Management
+    function togglePassword() {
+        const pwInput = document.getElementById('password');
+        const toggleBtn = document.querySelector('.toggle-password');
+        if (pwInput.type === 'password') {
+            pwInput.type = 'text';
+            toggleBtn.innerText = 'Hide';
+        } else {
+            pwInput.type = 'password';
+            toggleBtn.innerText = 'Show';
+        }
+    }
+
+    async function forgotPassword() {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('reset-section').classList.remove('hidden');
+        document.getElementById('app-title').innerText = "Reset Password";
+    }
+
+    function showLogin() {
+        document.getElementById('reset-section').classList.add('hidden');
+        document.getElementById('login-section').classList.remove('hidden');
+        document.getElementById('app-title').innerText = "Activity Reports";
+    }
+
+    async function handleReset() {
+        const email = document.getElementById('reset-email').value;
+        if (!email) return showMsg("Please enter your email", "error");
+        
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.href // Redirects back to this page
+        });
+
+        if (error) showMsg(error.message, "error");
+        else showMsg("Reset link sent! Check your email.", "success");
+    }
+
     async function loadReports() {
         try {
-            // Use relative path since index.html and reports.json are in the same repo
             const response = await fetch('reports.json');
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
             const data = await response.json();
             const select = document.getElementById('report-select');
             
-            // Reset dropdown to default
-            select.innerHTML = '<option value="" disabled selected>-- Choose a report --</option>';
+            // Accessing data.reports based on your JSON structure
+            const reports = data.reports || data;
             
-            // MATCHING YOUR JSON STRUCTURE: report.id and report.name
-            // Note: We access data.reports because your JSON has a root "reports" object
-            const reportsList = data.reports || data; 
-    
-            reportsList.forEach(report => {
+            reports.forEach(report => {
                 const opt = document.createElement('option');
-                opt.value = report.id;   // Maps to your "id" field
-                opt.innerText = report.name; // Maps to your "name" field
+                opt.value = report.id;
+                opt.innerText = report.name;
                 select.appendChild(opt);
             });
-            
-            console.log("Reports loaded successfully from local JSON");
         } catch (error) {
             console.error("Config Error:", error);
-            showMsg("Failed to load reports from reports.json", "error");
         }
     }
 
-    async function fetchDataRange() {
-        const { data, error } = await supabaseClient.rpc('get_activity_date_range');
-        const badge = document.getElementById('data-coverage');
-        if (error || !data || !data.min_date) {
-            badge.innerText = "Data coverage unavailable.";
-            return;
-        }
-        const options = { year: 'numeric', month: 'short' };
-        const minD = new Date(data.min_date);
-        const maxD = new Date(data.max_date);
-        
-        badge.innerHTML = `<strong>Data Coverage:</strong> ${minD.toLocaleDateString('en-SG', options)} — ${maxD.toLocaleDateString('en-SG', options)}`;
-        
-        const minISO = data.min_date.substring(0, 7);
-        const maxISO = data.max_date.substring(0, 7);
-        document.getElementById('start-month').min = minISO;
-        document.getElementById('start-month').value = minISO;
-        document.getElementById('end-month').min = minISO;
-        document.getElementById('end-month').max = maxISO;
-        document.getElementById('end-month').value = maxISO;
+    async function signIn() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) showMsg(error.message, 'error');
+        else window.location.reload();
     }
 
-    function updateMinDate() {
-        document.getElementById('end-month').min = document.getElementById('start-month').value;
-    }
-
-    async function runReport() {
-        const reportRPC = document.getElementById('report-select').value;
-        const startM = document.getElementById('start-month').value;
-        const endM = document.getElementById('end-month').value;
-        const btn = document.getElementById('run-btn');
-        const resultContainer = document.getElementById('result-container');
-        const resultBox = document.getElementById('result-box');
-
-        if (!reportRPC || !startM || !endM) return showMsg("Select report and date range", "error");
-
-        const start_date = `${startM}-01`;
-        const endParts = endM.split('-');
-        const lastDay = new Date(endParts[0], endParts[1], 0).getDate();
-        const end_date = `${endM}-${lastDay}`;
-
-        btn.innerText = "Calculating...";
-        btn.disabled = true;
-
-        try {
-            const { data, error } = await supabaseClient.rpc(reportRPC, { start_date, end_date });
-            if (error) throw error;
-
-            resultContainer.classList.remove('hidden');
-            if (Array.isArray(data)) {
-                if (data.length === 0) {
-                    resultBox.innerHTML = "<p style='text-align:center'>No records found.</p>";
-                } else {
-                    const headers = Object.keys(data[0]);
-                    let tableHtml = `<table><thead><tr>${headers.map(h => `<th>${h.replace(/_/g, ' ')}</th>`).join('')}</tr></thead><tbody>`;
-                    data.forEach(row => {
-                        tableHtml += `<tr>${headers.map(h => `<td>${row[h] ?? '-'}</td>`).join('')}</tr>`;
-                    });
-                    tableHtml += `</tbody></table>`;
-                    resultBox.innerHTML = tableHtml;
-                }
-            } else {
-                resultBox.innerHTML = `<span class="big-number">${data ?? 0}</span>`;
-            }
-        } catch (err) {
-            showMsg(err.message, "error");
-        } finally {
-            btn.innerText = "Execute Query";
-            btn.disabled = false;
-        }
+    async function signOut() {
+        await supabaseClient.auth.signOut();
+        window.location.reload();
     }
 
     function showMsg(text, type) {
@@ -190,33 +169,13 @@
         setTimeout(() => msgDiv.classList.add('hidden'), 5000);
     }
 
-    function showView(view) {
-        document.getElementById('login-section').classList.toggle('hidden', view !== 'login');
-        document.getElementById('main-app').classList.toggle('hidden', view !== 'app');
-    }
-
-    async function signIn() {
-        const { error } = await supabaseClient.auth.signInWithPassword({
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value
-        });
-        if (error) showMsg(error.message, 'error');
-        else window.location.reload();
-    }
-
     window.onload = async () => {
-        resetIdleTimer();
         const { data: { session } } = await supabaseClient.auth.getSession();
-        
-        setTimeout(() => {
-            if (session) {
-                showView('app');
-                fetchDataRange();
-                loadReports();
-            } else {
-                showView('login');
-            }
-        }, 100);
+        if (session) {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            loadReports();
+        }
     };
 </script>
 </body>
