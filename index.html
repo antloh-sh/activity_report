@@ -90,9 +90,33 @@
 <script>
     const SUPABASE_URL = 'https://qesgfxwgbggjyvngftee.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_MJQrnWCSsg0naLA9hxkPzQ__diYSGYi';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+            persistSession: true,
+            storage: window.sessionStorage // Clears login when tab/browser is closed
+        }
+    });
 
     let isRecovering = false; // Flag to track if we are in reset mode
+    let idleTimer;
+
+    function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    // Set for 15 minutes (900,000 ms)
+    idleTimer = setTimeout(autoLogout, 900000); 
+    }
+    
+    async function autoLogout() {
+        console.log("Session expired due to inactivity.");
+        await signOut();
+    }
+    
+    // Listen for any user interaction
+    window.onmousemove = resetIdleTimer;
+    window.onmousedown = resetIdleTimer;
+    window.ontouchstart = resetIdleTimer;
+    window.onclick = resetIdleTimer;
+    window.onkeypress = resetIdleTimer;
 
     function showMsg(text, type) {
         const msgDiv = document.getElementById('msg');
