@@ -10,7 +10,7 @@
     <style>
         :root { --primary: #3ecf8e; --bg: #f0f2f5; --text: #1c1c1c; --grey: #94a3b8; --danger: #ef4444; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; color: var(--text); }
-        .container { width: 100%; max-width: 800px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .container { width: 100%; max-width: 600px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { text-align: center; margin-top: 0; color: var(--primary); }
         label { font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         input, select { width: 100%; padding: 12px; margin: 8px 0 20px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; background: #fff; }
@@ -18,15 +18,19 @@
         .password-wrapper { position: relative; }
         .toggle-password { position: absolute; right: 12px; top: 12px; cursor: pointer; color: var(--grey); font-size: 0.8rem; user-select: none; }
 
-        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: opacity 0.2s; }
+        button:disabled { background: var(--grey); cursor: not-allowed; }
         .links-container { text-align: center; margin-top: 15px; }
         .link-btn { background: none; border: none; color: #64748b; text-decoration: underline; font-size: 0.9rem; cursor: pointer; padding: 5px; }
         
-        .data-badge { display: inline-block; background: #e2e8f0; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; color: #475569; margin-bottom: 20px; }
+        .data-badge { display: inline-block; background: #e2e8f0; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; color: #475569; margin-bottom: 20px; width: 100%; text-align: center; box-sizing: border-box; }
         .result-box { background: #f8fafc; border-radius: 8px; padding: 15px; overflow-x: auto; border: 1px solid #e2e8f0; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .big-number { font-size: 2.5rem; font-weight: bold; color: #4338ca; text-align: center; display: block; padding: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: white; }
         th { background: #f1f5f9; text-align: left; padding: 10px; border-bottom: 2px solid #cbd5e1; white-space: nowrap; }
         td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+        
         .hidden { display: none; }
         .message { padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: bold; }
         .error { background: #fee2e2; color: #ef4444; }
@@ -65,7 +69,8 @@
     </div>
 
     <div id="main-app" class="hidden">
-        <div id="data-coverage" class="data-badge">Ready</div>
+        <div id="data-coverage" class="data-badge">Ready to query</div>
+        
         <label>Select Report Type</label>
         <select id="report-select">
             <option value="" disabled selected>-- Choose a report --</option>
@@ -125,10 +130,12 @@
             const response = await fetch('reports.json');
             const data = await response.json();
             const select = document.getElementById('report-select');
-            const reports = data.reports || [];
+            // Support both direct array and { reports: [] } structure
+            const reports = data.reports || data;
+            
             reports.forEach(report => {
                 const opt = document.createElement('option');
-                opt.value = report.id; // This is the RPC function name
+                opt.value = report.id;
                 opt.innerText = report.name;
                 select.appendChild(opt);
             });
@@ -138,55 +145,57 @@
     }
 
     async function runReport() {
-        const reportId = document.getElementById('report-select').value;
-        const start = document.getElementById('start-month').value;
-        const end = document.getElementById('end-month').value;
+        const btn = document.getElementById('run-btn');
+        const reportRPC = document.getElementById('report-select').value;
+        const startM = document.getElementById('start-month').value;
+        const endM = document.getElementById('end-month').value;
         const resultBox = document.getElementById('result-box');
         const resultContainer = document.getElementById('result-container');
 
-        if (!reportId || !start || !end) {
-            showMsg("Please select a report and date range", "error");
+        if (!reportRPC || !startM || !endM) {
+            showMsg("Please select report and date range", "error");
             return;
         }
 
+        // Proper date calculation from backup file
+        const start_date = `${startM}-01`;
+        const endParts = endM.split('-');
+        const lastDay = new Date(endParts[0], endParts[1], 0).getDate();
+        const end_date = `${endM}-${lastDay}`;
+
+        btn.innerText = "Calculating...";
+        btn.disabled = true;
         resultContainer.classList.remove('hidden');
-        resultBox.innerHTML = "Processing query...";
+        resultBox.innerHTML = "Processing...";
 
         try {
-            // Standardizing date parameters for SQL (YYYY-MM-DD)
-            const { data, error } = await supabaseClient.rpc(reportId, {
-                start_date: start + "-01",
-                end_date: end + "-31"
-            });
-
+            const { data, error } = await supabaseClient.rpc(reportRPC, { start_date, end_date });
             if (error) throw error;
 
-            if (!data || data.length === 0) {
-                resultBox.innerHTML = "No records found.";
-                return;
+            // Restored logic to handle both tables and single numbers
+            if (Array.isArray(data)) {
+                if (data.length === 0) {
+                    resultBox.innerHTML = "<p style='text-align:center'>No records found.</p>";
+                } else {
+                    const headers = Object.keys(data[0]);
+                    let tableHtml = `<table><thead><tr>${headers.map(h => `<th>${h.replace(/_/g, ' ').toUpperCase()}</th>`).join('')}</tr></thead><tbody>`;
+                    data.forEach(row => {
+                        tableHtml += `<tr>${headers.map(h => `<td>${row[h] ?? '-'}</td>`).join('')}</tr>`;
+                    });
+                    tableHtml += `</tbody></table>`;
+                    resultBox.innerHTML = tableHtml;
+                }
+            } else {
+                // Handle single numeric returns correctly
+                resultBox.innerHTML = `<span class="big-number">${data ?? 0}</span>`;
             }
-
-            // Build Table
-            let tableHtml = '<table><thead><tr>';
-            Object.keys(data[0]).forEach(key => {
-                tableHtml += `<th>${key.replace(/_/g, ' ')}</th>`;
-            });
-            tableHtml += '</tr></thead><tbody>';
-
-            data.forEach(row => {
-                tableHtml += '<tr>';
-                Object.values(row).forEach(val => {
-                    tableHtml += `<td>${val !== null ? val : ''}</td>`;
-                });
-                tableHtml += '</tr>';
-            });
-            tableHtml += '</tbody></table>';
-            
-            resultBox.innerHTML = tableHtml;
-
         } catch (err) {
+            console.error(err);
             showMsg(err.message, "error");
             resultBox.innerHTML = "Error loading data.";
+        } finally {
+            btn.innerText = "Execute Query";
+            btn.disabled = false;
         }
     }
 
