@@ -25,6 +25,10 @@
       "name": "Engaged CFS 6~8 Seniors (In Boundary, Age 60+, CFS 6, 7 & 8, 2+ Sessions)"
     },
     {
+      "id": "list_active_seniors_without_cfs",
+      "name": "Active Seniors without CFS (In Boundary, Age 60+, No CFS, 1+ Sessions)"
+    },
+    {
       "id": "get_all_cfs_breakdown",
       "name": "Activity Session Count & CFS Averages (All members)"
     }
