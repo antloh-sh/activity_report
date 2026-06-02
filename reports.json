@@ -13,8 +13,8 @@
       "name": "GUI Unique Members (In Boundary, Age 60+)"
     },
     {
-      "id": "get_active_seniors_all_count",
-      "name": "Engaged Seniors (In Boundary, Age 60+, 2+ Sessions)"
+      "id": "count_robust_members_activity",
+      "name": "Engaged Robust Seniors (In Boundary, Age 60+, CFS 1-3, 2+ Sessions)"
     },
     {
       "id": "get_all_cfs_breakdown",
